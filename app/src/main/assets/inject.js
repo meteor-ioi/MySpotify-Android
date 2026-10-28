@@ -1,19 +1,7 @@
 (function() {
     'use strict';
 
-    // 1. 强制注入移动端 Viewport 标签 (禁用缩放以获得原生 App 触感)
-    function ensureViewport() {
-        let meta = document.querySelector('meta[name="viewport"]');
-        if (!meta) {
-            meta = document.createElement('meta');
-            meta.name = 'viewport';
-            document.head.appendChild(meta);
-        }
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
-    }
-    ensureViewport();
-
-    // 2. 注入全局播放控制函数（供 Android 原生 Notification / MediaSession 调用）
+    // 1. 全局播放控制函数（供 Android 原生 Notification / MediaSession 调用）
     window.__spotifyTogglePlay = function() {
         const btn = document.querySelector('[data-testid="control-button-playpause"]');
         if (btn) btn.click();
@@ -29,7 +17,7 @@
         if (btn) btn.click();
     };
 
-    // 3. 构建高度仿真 Spotify 官方 App 的原生底部导航栏 (Bottom Navigation Bar)
+    // 2. 构建仿真 Spotify 官方 App 的移动端底部导航栏 (Bottom Navigation Bar)
     const NAV_ITEMS = [
         {
             id: 'nav-home',
@@ -60,7 +48,7 @@
     function navigateTo(targetPath) {
         if (window.location.pathname === targetPath) return;
 
-        // 优先在 DOM 中寻找现成链接点击以触发 React 内部客户端路由
+        // 优先在 DOM 中寻找现有链接点击以触发 React 内部客户端路由
         const existingLink = document.querySelector(`a[href="${targetPath}"]`) ||
                              document.querySelector(`a[href="${targetPath}/"]`);
         if (existingLink) {
@@ -69,7 +57,6 @@
             return;
         }
 
-        // 回退到 HTML5 pushState
         try {
             window.history.pushState(null, '', targetPath);
             window.dispatchEvent(new PopStateEvent('popstate'));
@@ -101,7 +88,7 @@
     }
 
     function ensureBottomNav() {
-        if (document.getElementById('myspotify-bottom-nav')) {
+        if (!document.body || document.getElementById('myspotify-bottom-nav')) {
             updateActiveTab();
             return;
         }
@@ -125,11 +112,10 @@
         updateActiveTab();
     }
 
-    // 4. 监听播放状态、歌曲名称、艺人、封面变化
+    // 3. 监听播放状态、歌曲名称、艺人、封面变化
     let lastState = { isPlaying: false, title: '', artist: '', coverUrl: '' };
 
     function checkPlayback() {
-        ensureViewport();
         ensureBottomNav();
 
         if (!window.AndroidBridge) return;
@@ -175,23 +161,32 @@
         }
     }
 
-    // 5. 定时轮询 + DOM Mutation 观察 + 路由事件监听
-    setInterval(checkPlayback, 800);
-    window.addEventListener('popstate', updateActiveTab);
+    // 4. 等待 React 根容器挂载完毕后再激活，确保水合过程安全
+    function onReactReady(callback) {
+        if (document.querySelector('main') || document.querySelector('[data-testid="root"]')) {
+            callback();
+            return;
+        }
+        const timer = setInterval(() => {
+            if (document.querySelector('main') || document.querySelector('[data-testid="root"]')) {
+                clearInterval(timer);
+                callback();
+            }
+        }, 300);
+    }
 
-    const observer = new MutationObserver(function() {
-        checkPlayback();
+    onReactReady(() => {
+        ensureBottomNav();
+        setInterval(checkPlayback, 800);
+        window.addEventListener('popstate', updateActiveTab);
+
+        const observer = new MutationObserver(function() {
+            checkPlayback();
+        });
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+        }
     });
 
-    function attachObserver() {
-        const target = document.body;
-        if (target) {
-            observer.observe(target, { childList: true, subtree: true, attributes: true });
-        } else {
-            setTimeout(attachObserver, 500);
-        }
-    }
-    attachObserver();
-
-    console.log("MySpotify Mobile UI Injector active.");
+    console.log("MySpotify Mobile UI Injector safe mode initialized.");
 })();

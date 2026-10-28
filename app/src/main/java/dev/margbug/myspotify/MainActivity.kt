@@ -10,9 +10,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -110,13 +114,12 @@ class MainActivity : AppCompatActivity() {
         settings.databaseEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
 
-        // 关键改动：禁用桌面级宽视口，让 WebView 采用移动端真实物理屏幕宽度（360-412px）
-        settings.useWideViewPort = false
-        settings.loadWithOverviewMode = false
+        // 桌面模式与宽视口：确保 Spotify React 桌面引擎能够正常计算布局
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = true
         settings.setSupportZoom(false)
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
-        settings.textZoom = 100
 
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
@@ -136,8 +139,14 @@ class MainActivity : AppCompatActivity() {
             "AndroidBridge"
         )
 
-        // 核心：处理 DRM Protected Media 权限请求，确保 Widevine L3 解密模块正常启动
         webView.webChromeClient = object : WebChromeClient() {
+            // 控制台日志输出，便于排错
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                Log.d("SpotifyWeb", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
+                return super.onConsoleMessage(consoleMessage)
+            }
+
+            // 核心：处理 DRM Protected Media 权限请求，确保 Widevine L3 解密模块正常启动
             override fun onPermissionRequest(request: PermissionRequest) {
                 for (resource in request.resources) {
                     if (resource == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID) {
@@ -150,10 +159,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
-            override fun onPageCommitVisible(view: WebView?, url: String?) {
-                super.onPageCommitVisible(view, url)
-                injectResponsiveStyles()
-                injectControlScript()
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                Log.e("SpotifyWeb", "Load error: ${error?.description} on ${request?.url}")
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
