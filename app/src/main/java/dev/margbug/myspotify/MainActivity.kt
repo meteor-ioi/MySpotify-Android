@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
         // 关键改动：禁用桌面级宽视口，让 WebView 采用移动端真实物理屏幕宽度（360-412px）
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
-        settings.setSupportZoom = false
+        settings.setSupportZoom(false)
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
         settings.textZoom = 100
