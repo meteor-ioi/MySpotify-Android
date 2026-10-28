@@ -1,0 +1,83 @@
+/* MySpotify Mobile Responsive Injection CSS */
+
+/* 强制移动端全宽适配 */
+html, body {
+    overflow-x: hidden !important;
+    width: 100vw !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/* 隐藏桌面端右侧好友活动/歌词侧栏（在小屏避免遮挡） */
+[data-testid="buddy-feed"],
+[aria-label="好友在听"],
+[aria-label="Friend Activity"],
+aside[aria-label="右侧侧栏"] {
+    display: none !important;
+}
+
+/* 隐藏升级提示、下载客户端横幅 */
+a[href*="/premium"],
+a[href*="/download"],
+button[data-testid="upgrade-button"],
+[aria-label="升级到 Premium"],
+[aria-label="Upgrade to Premium"],
+div[data-testid="desktop-client-promo"] {
+    display: none !important;
+}
+
+/* 调整顶部顶栏 */
+[data-testid="topbar"],
+header[aria-label="顶部操作栏"] {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+/* 优化手机竖屏下的主视口排版 */
+@media (max-width: 768px) {
+    /* 主容器改为单栏流动布局 */
+    .Root__top-container,
+    div[data-testid="root"] {
+        grid-template-columns: 1fr !important;
+        grid-template-areas:
+            "main-view"
+            "now-playing-bar" !important;
+    }
+
+    /* 左侧边栏在手机上收缩为轻量悬浮或隐藏，让位给主内容 */
+    .Root__nav-bar,
+    nav[aria-label="主要导航"],
+    nav[aria-label="Main"] {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    /* 主内容区域撑满屏幕 */
+    .Root__main-view,
+    main[role="main"] {
+        width: 100vw !important;
+        margin: 0 !important;
+        padding-bottom: 90px !important; /* 防止被底部播放器遮挡 */
+    }
+
+    /* 底部播放控制条沉底并适配全宽 */
+    .Root__now-playing-bar,
+    footer[data-testid="now-playing-bar"] {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        z-index: 9999 !important;
+        background-color: #181818 !important;
+        border-top: 1px solid #282828 !important;
+        height: 72px !important;
+        padding: 0 8px !important;
+    }
+
+    /* 放大手机端切歌、播放按钮点击热区 */
+    [data-testid="control-button-playpause"] {
+        transform: scale(1.15) !important;
+        margin: 0 10px !important;
+    }
+}

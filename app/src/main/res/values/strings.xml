@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MySpotify</string>
+    <string name="channel_name">Spotify 播放服务</string>
+    <string name="channel_desc">用于保持后台音频播放与锁屏控制</string>
+</resources>
