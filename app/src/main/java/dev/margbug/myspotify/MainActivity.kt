@@ -109,11 +109,15 @@ class MainActivity : AppCompatActivity() {
         settings.domStorageEnabled = true
         settings.databaseEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
-        settings.useWideViewPort = true
-        settings.loadWithOverviewMode = true
-        settings.setSupportZoom(true)
-        settings.builtInZoomControls = true
+
+        // 关键改动：禁用桌面级宽视口，让 WebView 采用移动端真实物理屏幕宽度（360-412px）
+        settings.useWideViewPort = false
+        settings.loadWithOverviewMode = false
+        settings.setSupportZoom = false
+        settings.builtInZoomControls = false
         settings.displayZoomControls = false
+        settings.textZoom = 100
+
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
@@ -146,6 +150,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageCommitVisible(view: WebView?, url: String?) {
+                super.onPageCommitVisible(view, url)
+                injectResponsiveStyles()
+                injectControlScript()
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 injectResponsiveStyles()
@@ -167,7 +177,7 @@ class MainActivity : AppCompatActivity() {
                         style.id = 'myspotify-injected-style';
                         document.head.appendChild(style);
                     }
-                    style.innerHTML = `${css.replace("`", "\\`").replace("$", "\\$")}`;
+                    style.textContent = `${css.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")}`;
                 })();
             """.trimIndent()
             webView.evaluateJavascript(js, null)

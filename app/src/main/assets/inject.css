@@ -1,83 +1,206 @@
-/* MySpotify Mobile Responsive Injection CSS */
+/* ========================================================
+   MySpotify Mobile Native Transformation CSS
+   ======================================================== */
 
-/* 强制移动端全宽适配 */
+/* 1. 全局视口与移动端基础重置 */
 html, body {
     overflow-x: hidden !important;
     width: 100vw !important;
+    max-width: 100vw !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 14px !important;
     user-select: none !important;
     -webkit-user-select: none !important;
     -webkit-tap-highlight-color: transparent !important;
 }
 
-/* 隐藏桌面端右侧好友活动/歌词侧栏（在小屏避免遮挡） */
+/* 2. 彻底重构 Desktop Grid 容器为单列纵向流动布局 */
+.Root,
+#main,
+[data-testid="root"],
+.Root__top-container,
+div[data-testid="root"] {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    grid-template-columns: 100% !important;
+    grid-template-areas: "main-view" !important;
+    grid-template-rows: 1fr !important;
+    height: 100vh !important;
+}
+
+/* 3. 彻底隐藏桌面端左侧边栏、右侧边栏与中间拖拽条 (改由移动端原生底部导航承载) */
+nav.Root__nav-bar,
+[data-testid="left-sidebar"],
+[data-testid="LayoutResizer__resize-bar"],
+.LayoutResizer__resize-bar,
+.LayoutResizer__inline-start,
 [data-testid="buddy-feed"],
 [aria-label="好友在听"],
 [aria-label="Friend Activity"],
-aside[aria-label="右侧侧栏"] {
+aside[aria-label="右侧侧栏"],
+aside[aria-label="左侧侧栏"],
+aside {
     display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
-/* 隐藏升级提示、下载客户端横幅 */
+/* 4. 彻底隐藏桌面端推广、升级提示与广告横幅 */
 a[href*="/premium"],
 a[href*="/download"],
 button[data-testid="upgrade-button"],
 [aria-label="升级到 Premium"],
 [aria-label="Upgrade to Premium"],
-div[data-testid="desktop-client-promo"] {
+div[data-testid="desktop-client-promo"],
+div[data-testid="toast-container"] button:has(svg),
+[data-testid="cookie-banner"],
+div[data-testid="banner"] {
     display: none !important;
 }
 
-/* 调整顶部顶栏 */
+/* 5. 顶部操作栏适配移动端 */
+header,
 [data-testid="topbar"],
-header[aria-label="顶部操作栏"] {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
+.Root__globalNav,
+[data-testid="global-nav-bar"] {
+    padding: 8px 12px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    background-color: #121212 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 999 !important;
 }
 
-/* 优化手机竖屏下的主视口排版 */
-@media (max-width: 768px) {
-    /* 主容器改为单栏流动布局 */
-    .Root__top-container,
-    div[data-testid="root"] {
-        grid-template-columns: 1fr !important;
-        grid-template-areas:
-            "main-view"
-            "now-playing-bar" !important;
-    }
+/* 搜索框宽度自适应 */
+input[data-testid="search-input"] {
+    width: 100% !important;
+    max-width: calc(100vw - 32px) !important;
+    font-size: 14px !important;
+    height: 38px !important;
+}
 
-    /* 左侧边栏在手机上收缩为轻量悬浮或隐藏，让位给主内容 */
-    .Root__nav-bar,
-    nav[aria-label="主要导航"],
-    nav[aria-label="Main"] {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
+/* 6. 主内容区撑满并预留底部播放器与导航栏高度 (130px) */
+main,
+main[role="main"],
+.Root__main-view,
+.main-view-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 12px 140px 12px !important; /* 关键：底部预留留白防遮挡 */
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
 
-    /* 主内容区域撑满屏幕 */
-    .Root__main-view,
-    main[role="main"] {
-        width: 100vw !important;
-        margin: 0 !important;
-        padding-bottom: 90px !important; /* 防止被底部播放器遮挡 */
-    }
+/* 7. 歌单与专辑卡片自适应为移动端 2 列网格 (替代桌面端 6-8 列) */
+[data-testid="grid-container"],
+div[style*="grid-template-columns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
 
-    /* 底部播放控制条沉底并适配全宽 */
-    .Root__now-playing-bar,
-    footer[data-testid="now-playing-bar"] {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        z-index: 9999 !important;
-        background-color: #181818 !important;
-        border-top: 1px solid #282828 !important;
-        height: 72px !important;
-        padding: 0 8px !important;
-    }
+/* 8. 底部 Mini Player 悬浮播放条 (高度仿真 Spotify 官方手机版) */
+footer,
+footer[data-testid="now-playing-bar"],
+.Root__now-playing-bar {
+    position: fixed !important;
+    bottom: 60px !important; /* 悬浮在底部导航栏上方 */
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100vw - 16px) !important;
+    height: 56px !important;
+    background: #282828 !important;
+    border-radius: 8px !important;
+    z-index: 999998 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 4px 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7) !important;
+    overflow: hidden !important;
+}
 
-    /* 放大手机端切歌、播放按钮点击热区 */
-    [data-testid="control-button-playpause"] {
-        transform: scale(1.15) !important;
-        margin: 0 10px !important;
-    }
+/* 隐藏播放条中的桌面冗余控件 (音量条、设备切换、画中画、全屏、歌词图标) */
+footer .volume-bar,
+footer [data-testid="volume-bar"],
+footer [aria-label*="音量"],
+footer [aria-label*="Volume"],
+footer [data-testid="pip-toggle-button"],
+footer [data-testid="control-button-npv"],
+footer [data-testid="lyrics-button"],
+footer [data-testid="control-button-queue"],
+footer [data-testid="connect-device-picker"],
+footer .playback-bar__progress-time {
+    display: none !important;
+}
+
+/* 进度条精简为贴顶极细进度线 */
+footer .playback-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 2px !important;
+    margin: 0 !important;
+}
+
+/* 放大移动端切歌和播放按钮点击热区 */
+[data-testid="control-button-playpause"] {
+    transform: scale(1.15) !important;
+    margin: 0 4px !important;
+}
+
+/* 9. 注入的原生移动端底部导航栏样式 (Bottom Navigation Bar) */
+#myspotify-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 56px;
+    background: #121212;
+    border-top: 1px solid #242424;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 999999;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.myspotify-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    color: #b3b3b3;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.myspotify-nav-item.active {
+    color: #ffffff;
+}
+
+.myspotify-nav-item svg {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 3px;
+    fill: currentColor;
 }
